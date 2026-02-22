@@ -2,12 +2,6 @@ import mongoose from "mongoose";
 
 const orderSchema = mongoose.Schema(
   {
-    // 🔗 Link order to logged-in user
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
 
     customerName: { type: String, required: true },
     email: { type: String, required: true },

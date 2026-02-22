@@ -5,23 +5,18 @@ import Order from "../models/order.js";
 
 export const placeOrder = async (req, res) => {
   try {
-    // user is available from protect middleware
-    const userId = req.user._id;
-
     const { customerName, email, items, totalAmount, orderType } = req.body;
 
-    let status = "Pending";
-
-    if (orderType === "Delivery") {
-      status = "Pending"; // Admin updates to "Out for Delivery"
-    } else if (orderType === "Takeaway") {
-      status = "Pending"; // Admin updates to "Ready for Pickup"
-    } else {
-      status = "Pending"; // Dine-In
+    // 1️⃣ Validate required fields
+    if (!customerName || !email || !items || !Array.isArray(items) || !items.length || !totalAmount || !orderType) {
+      return res.status(400).json({ message: "Missing order information" });
     }
 
+    // 2️⃣ Set default status
+    let status = "Pending"; // all orders start pending
+
+    // 3️⃣ Create order (no user ID needed)
     const order = new Order({
-      user: req.user._id, // link order to logged-in user
       customerName,
       email,
       items,
@@ -30,16 +25,31 @@ export const placeOrder = async (req, res) => {
       status,
     });
 
-    await order.save();
+    // 4️⃣ Save order
+    const savedOrder = await order.save();
 
-    res.status(201).json({
-      message: "Order placed successfully",
-      order,
-    });
+    // 5️⃣ Respond with saved order
+    res.status(201).json(savedOrder);
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error("Error creating order:", err.message);
+    res.status(500).json({ message: "Server error: " + err.message });
+  }
+};
+
+// Optional: Get orders for logged-in user
+export const getMyOrders = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.status(200).json(orders);
+
+  } catch (err) {
+    console.error("Error fetching orders:", err.message);
+    res.status(500).json({ message: "Server error: " + err.message });
   }
 };
 
@@ -91,13 +101,13 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 // get order by useid
-export const getMyOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ user: req.user._id })
-      .populate("items.menuItemId");
+// export const getMyOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find({ user: req.user._id })
+//       .populate("items.menuItemId");
 
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.json(orders);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
