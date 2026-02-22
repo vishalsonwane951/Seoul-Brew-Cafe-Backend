@@ -11,6 +11,15 @@ import ConnectDB from './config/db.js';
 dotenv.config(); // Must be at the very top
 ConnectDB()
 
+app.use(
+  cors({
+    origin: [
+      process.env.FRONTEND_URL,
+    ],
+    credentials: true,
+  })
+);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
