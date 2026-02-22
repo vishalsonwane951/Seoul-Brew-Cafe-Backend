@@ -8,8 +8,16 @@ import reservationsRoutes from './routes/reservationRoutes.js';
 import Info from './controllers/Info.js';
 import ConnectDB from './config/db.js';
 
+import userRoutes from './routes/userRoutes.js'
+
 dotenv.config(); // Must be at the very top
 ConnectDB()
+
+
+
+const app = express();
+app.use(cors());
+app.use(express.json());
 
 app.use(
   cors({
@@ -19,11 +27,8 @@ app.use(
     credentials: true,
   })
 );
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
+// user
+app.use('/api',userRoutes)
 // Routes
 app.use('/api/menu', menurouter);
 app.use('/api/orders', orderRoutes);

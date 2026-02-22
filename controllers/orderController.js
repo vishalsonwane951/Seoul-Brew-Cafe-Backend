@@ -5,18 +5,38 @@ import Order from "../models/order.js";
 
 export const placeOrder = async (req, res) => {
   try {
+    // user is available from protect middleware
+    const userId = req.user._id;
+
     const { customerName, email, items, totalAmount, orderType } = req.body;
 
     let status = "Pending";
 
-    if (orderType === "Delivery") status = "Pending";           // admin updates to "Out for Delivery"
-    else if (orderType === "Takeaway") status = "Pending";      // admin updates to "Ready for Pickup"
-    else status = "Pending";                                    // Dine-In
+    if (orderType === "Delivery") {
+      status = "Pending"; // Admin updates to "Out for Delivery"
+    } else if (orderType === "Takeaway") {
+      status = "Pending"; // Admin updates to "Ready for Pickup"
+    } else {
+      status = "Pending"; // Dine-In
+    }
 
-    const order = new Order({ customerName, email, items, totalAmount, orderType, status });
+    const order = new Order({
+      user: req.user._id, // link order to logged-in user
+      customerName,
+      email,
+      items,
+      totalAmount,
+      orderType,
+      status,
+    });
+
     await order.save();
 
-    res.status(201).json(order);
+    res.status(201).json({
+      message: "Order placed successfully",
+      order,
+    });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });
@@ -66,6 +86,18 @@ export const updateOrderStatus = async (req, res) => {
     res.json(order);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// get order by useid
+export const getMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id })
+      .populate("items.menuItemId");
+
+    res.json(orders);
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
