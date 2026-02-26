@@ -11,8 +11,8 @@ const router = express.Router();
 
 router.get("/",admin, getReservations);
 
-router.put("/:id/status",protect, updateReservationStatus);
+router.put("/:id/status",admin, updateReservationStatus);
 
-router.delete("/:id",admin, deleteReservation);
+router.delete("/:id/delete",admin, deleteReservation);
 
 export default router;

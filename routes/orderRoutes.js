@@ -19,8 +19,8 @@ router.patch("/:id/cancel", protect, cancelOrder);
 
 router.get("/", protect, admin, getOrders);
 router.get("/:id",admin, getOrder);
-router.patch("/:id/advance", advanceOrderStatus);
-router.put("/:orderId/status", updateOrderStatus);
+router.patch("/:id/advance",admin, advanceOrderStatus);
+router.put("/:orderId/status", admin, updateOrderStatus);
 
 
 router.get("/my-orders", protect, getOrderById );

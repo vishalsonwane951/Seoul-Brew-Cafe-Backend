@@ -84,7 +84,7 @@ export const getOrders = async (req, res) => {
   try {
     const orders = await Order.find()
       .populate("user", "name email admin") // populate customer name
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: 1 });
 
     const formatted = orders.map(o => ({
       id: o._id,
