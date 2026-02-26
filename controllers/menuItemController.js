@@ -1,13 +1,14 @@
 // controllers/menuController.js
 import Menu from "../models/menuItem.js";
+import MenuItem from '../models/menuItem.js'
 
 // GET /api/menu
 export const getMenu = async (req, res) => {
   try {
-    const menu = await Menu.findOne({},{coffee: 1, matcha: 1, food: 1,_id: 0}); // single document
-    if (!menu) return res.status(404).json({ message: "Menu not found" });
-    res.json(menu);
+    const items = await MenuItem.find({}); // fetch all items
+    res.json(items); // flat array
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -15,14 +16,31 @@ export const getMenu = async (req, res) => {
 // POST /api/menu/add-item
 export const createMenu = async (req, res) => {
   try {
-    const { category, title, description, price, imageUrl, available } = req.body;
-    const menu = await Menu.findOne();
-    if (!menu) return res.status(404).json({ message: "Menu not found" });
+    const { category, title, description, price, imageUrl, available, allergens, kcal } = req.body;
 
-    menu[category].push({ title, description, price, imageUrl, available });
-    await menu.save();
-    res.status(201).json(menu);
+    if (!category || !title || !price) {
+      return res.status(400).json({ message: "Category, title, and price are required" });
+    }
+
+    // Create a new menu item
+    const newItem = new MenuItem({
+      category,
+      title,
+      description: description || "",
+      price,
+      stock,
+      imageUrl: imageUrl || "☕",
+      available: available !== undefined ? available : true,
+      allergens: allergens || "",
+      kcal: kcal || 0,
+      sales: 0
+    });
+
+    await newItem.save();
+
+    res.status(201).json(newItem);
   } catch (err) {
+    console.error(err);
     res.status(400).json({ message: err.message });
   }
 };

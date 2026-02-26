@@ -9,15 +9,16 @@ if (!MONGO_URL) {
   process.exit(1);
 }
 
-const connectDB = async ()=> {
-    try{
-        const conn = await mongoose.connect(MONGO_URL);
-            console.log(`MongoDB Coneected ${conn.connection.host}`)
-    }
-    catch (error) {
-        console.log(`Error: ${error.message}`)
-        process.exit(1);
-    }
-}
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URL); // options not needed
+
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+};
 
 export default connectDB;

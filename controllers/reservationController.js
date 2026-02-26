@@ -3,11 +3,43 @@ import Reservation from "../models/Reservation.js";
 // Create Reservation
 export const createReservation = async (req, res) => {
   try {
-    const reservation = new Reservation(req.body);
+    const { customerName, email, phone,table, date, time, guests, specialRequest } = req.body;
+
+    const reservation = new Reservation({
+      customerName,
+      email,
+      phone,
+      date,
+      time,
+      guests,
+      specialRequest,
+      table,
+      status: "Pending",
+    });
+
     const savedReservation = await reservation.save();
-    res.status(201).json(savedReservation);
+
+    res.status(201).json({
+      success: true,
+      reservation: {
+        _id: savedReservation._id,
+        customerName: savedReservation.customerName,
+        email: savedReservation.email,
+        phone: savedReservation.phone,
+        date: savedReservation.date,
+        table: savedReservation.table,
+        guests: savedReservation.guests,
+        specialRequest: savedReservation.specialRequest,
+        table: savedReservation.table,
+        status: savedReservation.status,
+      },
+    });
+
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 

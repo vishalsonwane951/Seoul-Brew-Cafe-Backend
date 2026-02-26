@@ -1,36 +1,43 @@
 // Register
-import User from "../models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import UserModel from "../models/userModel.js"
+
 
 // Register
 
+
 export const registerUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password } = req.body;
+    const { firstName, lastName, email, phone, password, admin } = req.body;
 
-    // Check if email already exists
-    const existingUser = await User.findOne({ email });
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
     const name = `${firstName} ${lastName}`;
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Hash the password with bcrypt
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    const user = new User({
+    const user = new UserModel({ // ✅ use UserModel here
       name,
       email,
+      password: hashedPassword,
       phone,
-      password: hashedPassword, // ⚡ NOW SAVED AS HASHED PASSWORD
+      admin: admin || false,
     });
 
     await user.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({
+      message: "User registered successfully",
+      userId: user._id,
+      admin: user.admin,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message || "Registration failed" });
@@ -44,31 +51,26 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+    const user = await UserModel.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid email or password" });
 
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
-    // ✅ Ensure you have a secret key
-    const secretKey = process.env.JWT_SECRET || "your_jwt_secret"; // replace with env var in production
+    const secretKey = process.env.JWT_SECRET || "your_jwt_secret";
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
+      { userId: user._id, email: user.email, admin: user.admin },
       secretKey,
-      { expiresIn: "7d" } // optional
+      { expiresIn: "7d" }
     );
 
     res.status(200).json({
       message: "Login successful",
       token,
-      role: user.role,
+      admin: user.admin,
       name: user.name,
       email: user.email,
     });
@@ -76,4 +78,4 @@ export const loginUser = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: err.message || "Login failed" });
   }
-};
+};  

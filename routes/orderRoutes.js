@@ -4,17 +4,25 @@ import {
   getOrders,
   getOrder,
   updateOrderStatus,
-  getMyOrders
+  getOrderById ,
+  advanceOrderStatus,
+  cancelOrder
 } from "../controllers/orderController.js";
-import { adminOnly, protect } from "../middleware/authMiddleware.js";
+import { admin, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", placeOrder);
-router.get("/", getOrders);
-router.get("/:id", getOrder);
-router.put("/:id/status", adminOnly, updateOrderStatus);
+router.post("/", protect, placeOrder);
+router.patch("/:id/cancel", protect, cancelOrder);
 
-router.get("/my-orders", protect, getMyOrders);
+// Admin routed
+
+router.get("/", protect, admin, getOrders);
+router.get("/:id",admin, getOrder);
+router.patch("/:id/advance", advanceOrderStatus);
+router.put("/:orderId/status", updateOrderStatus);
+
+
+router.get("/my-orders", protect, getOrderById );
 
 export default router;
