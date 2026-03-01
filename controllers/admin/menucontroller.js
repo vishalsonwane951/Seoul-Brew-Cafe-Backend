@@ -48,6 +48,7 @@ export const addMenuItem = async (req, res) => {
       });
     }
 
+    const { recipe } = req.body;
     const newItem = await MenuItem.create({
       title,
       description,
@@ -58,9 +59,11 @@ export const addMenuItem = async (req, res) => {
       allergens,
       kcal,
       sales: 0,
-      stock: true
+      stock: true,
+      recipe: Array.isArray(recipe) ? recipe : [],
     });
 
+    if (req.io) req.io.emit("menu:refresh");
     res.status(201).json(newItem);
 
   } catch (err) {
@@ -84,6 +87,7 @@ export const updateMenuItem = async (req, res) => {
 
     if (!updatedItem)
       return res.status(404).json({ message: "Item not found" });
+    if (req.io) req.io.emit("menu:refresh");
 
     res.json(updatedItem);
 
@@ -101,6 +105,7 @@ export const deleteMenuItem = async (req, res) => {
 
     if (!item)
       return res.status(404).json({ message: "Item not found" });
+    if (req.io) req.io.emit("menu:refresh");
 
     res.json({ message: "Item deleted" });
 
@@ -117,8 +122,9 @@ export const toggleAvailability = async (req, res) => {
     if (!menuItem) return res.status(404).json({ message: 'Menu item not found' });
 
     menuItem.available = !menuItem.available;
-    menuItem.stock = menuItem.available;  // sync stock boolean
+    menuItem.stock = menuItem.available;
     await menuItem.save();
+    if (req.io) req.io.emit("menu:refresh");
 
     res.json({ available: menuItem.available, stock: menuItem.stock });
   } catch (err) {

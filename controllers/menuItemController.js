@@ -1,12 +1,37 @@
 // controllers/menuController.js
 import Menu from "../models/menuItem.js";
-import MenuItem from '../models/menuItem.js'
+import MenuItem from "../models/menuItem.js";
+import InventoryItem from "../models/inventoryItem.js";
 
-// GET /api/menu
+// GET /api/menu – returns all items with inStockFromRecipe when recipe exists
 export const getMenu = async (req, res) => {
   try {
-    const items = await MenuItem.find({}); // fetch all items
-    res.json(items); // flat array
+    const items = await MenuItem.find({}).lean();
+    const ingredientIds = [...new Set(items.flatMap((m) => (m.recipe || []).map((r) => r.inventoryItemId?.toString()).filter(Boolean)))];
+    const inventoryMap = {};
+    if (ingredientIds.length > 0) {
+      const invItems = await InventoryItem.find({ _id: { $in: ingredientIds } }).lean();
+      invItems.forEach((inv) => {
+        inventoryMap[inv._id.toString()] = inv;
+      });
+    }
+    const result = items.map((item) => {
+      const recipe = item.recipe || [];
+      let inStockFromRecipe = null;
+      if (recipe.length > 0) {
+        inStockFromRecipe = recipe.every((r) => {
+          const inv = inventoryMap[r.inventoryItemId?.toString()];
+          return inv && inv.currentQty >= (r.quantityPerServing || 0);
+        });
+      }
+      return {
+        ...item,
+        inStockFromRecipe,
+        // effective stock: manual stock AND (no recipe or recipe in stock)
+        stock: item.stock && (inStockFromRecipe === null || inStockFromRecipe),
+      };
+    });
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });

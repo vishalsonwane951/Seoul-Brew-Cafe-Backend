@@ -10,7 +10,14 @@ const menuItemSchema = new mongoose.Schema({
   sales: { type: Number, default: 0 },
   allergens: { type: String, default: '' },
   kcal: { type: Number, default: 0 },
-  stock: { type: Boolean, default: true } // true = In Stock, false = Out of Stock
+  stock: { type: Boolean, default: true }, // manual override; when recipe exists, also consider inStockFromRecipe
+  // Link to inventory: deduct quantityPerServing * orderQty when order is placed
+  recipe: [
+    {
+      inventoryItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'InventoryItem' },
+      quantityPerServing: { type: Number, required: true, min: 0 },
+    },
+  ],
 }, { timestamps: true });
 
 export default mongoose.model("MenuItem", menuItemSchema);

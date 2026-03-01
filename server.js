@@ -1,6 +1,10 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import cors from 'cors';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import mongoose from 'mongoose';
 import menurouter from './routes/menuroutes.js';
 import orderRoutes from './routes/orderRoutes.js';
@@ -15,6 +19,8 @@ import userModel from './models/userModel.js';
 import { Server } from "socket.io";
 import menuRoutes from './routes/admin/menuRoutes.js'
 import reservationRoutes from './routes/admin/reservationRoutes.js'
+import staffRoutes from './routes/admin/staffRoutes.js'
+import inventoryRoutes from './routes/admin/inventoryRoutes.js'
 
 
 // import bcrypt from 'bcryptjs';
@@ -28,6 +34,7 @@ ConnectDB()
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // Migration
@@ -65,7 +72,9 @@ app.use(express.json());
 
 // Admin
 app.use("/api/menu", menuRoutes);
-app.use('/api',reservationRoutes)
+app.use('/api', reservationRoutes)
+app.use('/api/staff', staffRoutes)
+app.use('/api/inventory', inventoryRoutes)
 
 
 

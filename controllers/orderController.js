@@ -1,4 +1,6 @@
 import Order from "../models/order.js";
+import MenuItem from "../models/menuItem.js";
+import InventoryItem from "../models/inventoryItem.js";
 import userModel from '../models/userModel.js'
 import mongoose from "mongoose";
 import { io } from "../socket.js";
@@ -25,7 +27,7 @@ export const placeOrder = async (req, res) => {
       name,
       email,
       total,
-      status: "Pending",           // first status
+      status: "Pending",
       statusTimestamps: { Accepted: new Date() },
       orderPlacedAt: new Date(),
       updatedAt: new Date(),
@@ -34,7 +36,34 @@ export const placeOrder = async (req, res) => {
     // 3️⃣ Save order
     const savedOrder = await order.save();
 
-    // 4️⃣ Respond
+    // 4️⃣ Deduct inventory from recipe & increment sales
+    for (const line of savedOrder.items) {
+      const menuItemId = line.menuItemId || line.menuItem;
+      if (!menuItemId) continue;
+      const menuItem = await MenuItem.findById(menuItemId).lean();
+      if (!menuItem) continue;
+      const qty = Number(line.quantity) || 1;
+      // Increment sales
+      await MenuItem.findByIdAndUpdate(menuItemId, { $inc: { sales: qty } });
+      // Deduct inventory from recipe
+      const recipe = menuItem.recipe || [];
+      for (const r of recipe) {
+        const invId = r.inventoryItemId;
+        const perServing = Number(r.quantityPerServing) || 0;
+        if (!invId || perServing <= 0) continue;
+        const inv = await InventoryItem.findById(invId);
+        if (!inv) continue;
+        const deduct = perServing * qty;
+        const newQty = Math.max(0, (inv.currentQty || 0) - deduct);
+        await InventoryItem.findByIdAndUpdate(invId, { currentQty: newQty });
+      }
+    }
+    if (req.io) {
+      req.io.emit("inventory:refresh");
+      req.io.emit("menu:refresh");
+    }
+
+    // 5️⃣ Respond
     res.status(201).json(savedOrder);
 
   } catch (err) {
