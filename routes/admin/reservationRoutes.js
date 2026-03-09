@@ -9,10 +9,10 @@ import { admin, protect } from '../../middleware/authMiddleware.js'
 
 const router = express.Router();
 
-router.get("/",admin, getReservations);
+router.get("/",protect, admin, getReservations);
 
-router.put("/:id/status",admin, updateReservationStatus);
+router.put("/:id/status",protect,admin, updateReservationStatus);
 
-router.delete("/:id/delete",admin, deleteReservation);
+router.delete("/:id/delete",protect,admin, deleteReservation);
 
 export default router;

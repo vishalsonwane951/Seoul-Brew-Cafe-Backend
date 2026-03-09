@@ -6,7 +6,7 @@ import InventoryItem from "../models/inventoryItem.js";
 // GET /api/menu – returns all items with inStockFromRecipe when recipe exists
 export const getMenu = async (req, res) => {
   try {
-    const items = await MenuItem.find({}).lean();
+  const items = await MenuItem.find({}).sort({ createdAt: -1 }).lean()
     const ingredientIds = [...new Set(items.flatMap((m) => (m.recipe || []).map((r) => r.inventoryItemId?.toString()).filter(Boolean)))];
     const inventoryMap = {};
     if (ingredientIds.length > 0) {

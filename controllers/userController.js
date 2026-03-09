@@ -66,6 +66,7 @@ export const loginUser = async (req, res) => {
       secretKey,
       { expiresIn: "7d" }
     );
+console.log("Generated token:", token);
 
     res.status(200).json({
       message: "Login successful",

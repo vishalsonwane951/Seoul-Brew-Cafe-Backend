@@ -3,7 +3,7 @@ import MenuItem from "../models/menuItem.js";
 import InventoryItem from "../models/inventoryItem.js";
 import userModel from '../models/userModel.js'
 import mongoose from "mongoose";
-import { io } from "../socket.js";
+import { getIO  } from "../socket.js";
 
 
 export const placeOrder = async (req, res) => {

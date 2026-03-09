@@ -19,5 +19,5 @@ const menuItemSchema = new mongoose.Schema({
     },
   ],
 }, { timestamps: true });
-
+menuItemSchema.index({ createdAt: -1 });
 export default mongoose.model("MenuItem", menuItemSchema);
