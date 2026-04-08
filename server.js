@@ -29,7 +29,7 @@ const app = express();
 app.use(cors({ 
   origin: process.env.FRONTEND_URL 
     ? process.env.FRONTEND_URL.split(',').map(url => url.trim()) 
-    : ['cafegoodluck.netlify.app', 'http://localhost:5173', 'https://seoul-brew-cafe-frontend.vercel.app', 'https://seoulbrewcafes.netlify.app'],
+    : ['https://cafegoodluck.netlify.app', 'http://localhost:5173', 'https://seoul-brew-cafe-frontend.vercel.app', 'https://seoulbrewcafes.netlify.app'],
   credentials: true 
 }));
 app.use(express.json());
