@@ -26,12 +26,27 @@ ConnectDB();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-app.use(cors({ 
-  origin: process.env.FRONTEND_URL 
-    ? process.env.FRONTEND_URL.split(',').map(url => url.trim()) 
-    : ['https://cafegoodluck.netlify.app', 'http://localhost:5173', 'https://seoul-brew-cafe-frontend.vercel.app', 'https://seoulbrewcafes.netlify.app'],
-  credentials: true 
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : [
+      'https://cafegoodluck.netlify.app',
+      'http://localhost:5173',
+      'https://seoul-brew-cafe-frontend.vercel.app',
+      'https://seoulbrewcafes.netlify.app'
+    ];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser requests (like Postman)
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
 }));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
