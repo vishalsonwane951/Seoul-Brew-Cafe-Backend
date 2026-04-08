@@ -171,11 +171,11 @@ export const advanceOrderStatus = async (req, res) => {
       });
     }
 
-    // ✅ update ONLY required fields (NO full validation)
+    // ✅ FIX: Use nextStatus (the new status) instead of order.status (old status)
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
       {
-        status: order.status,
+        status: nextStatus,
         statusTimestamps: order.statusTimestamps,
         updatedAt: new Date(),
       },

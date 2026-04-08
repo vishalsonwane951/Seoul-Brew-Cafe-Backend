@@ -26,32 +26,17 @@ ConnectDB();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-app.use(cors({ origin: 'https://seoul-brew-cafe-frontend.vercel.app' ||'https://seoulbrewcafes.netlify.app', credentials: true }));
+app.use(cors({ 
+  origin: process.env.FRONTEND_URL 
+    ? process.env.FRONTEND_URL.split(',').map(url => url.trim()) 
+    : ['cafegoodluck.netlify.app', 'http://localhost:5173', 'https://seoul-brew-cafe-frontend.vercel.app', 'https://seoulbrewcafes.netlify.app'],
+  credentials: true 
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Middleware to attach io to req
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
-
-// ── Admin Routes ───────────────────────────────────────────────────────────
-app.use('/api/menu', menuRoutes);
-app.use('/api', reservationRoutes);
-app.use('/api/staff', staffRoutes);
-app.use('/api/inventory', inventoryRoutes);
-
-// ── User Routes ────────────────────────────────────────────────────────────
-app.use('/api', userRoutes);
-app.use('/api/menu', menurouter);
-app.use('/api/orders', orderRoutes);
-app.use('/api/reservations', reservationsRoutes);
-app.use('/api', Info);
-
 // ── HTTP + Socket.io ───────────────────────────────────────────────────────
 const server = http.createServer(app);
-
 
 export const io = new Server(server, {
   cors: {
@@ -60,7 +45,7 @@ export const io = new Server(server, {
   },
 });
 
-// Attach io to every request
+// FIX: Attach io to every request (moved AFTER io is defined)
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -72,6 +57,19 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
   });
 });
+
+// ── Admin Routes ───────────────────────────────────────────────────────────
+app.use('/api/menu', menuRoutes);
+app.use('/api', reservationRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/inventory', inventoryRoutes);
+
+// ── User Routes ───────────────────────────────────────────────────────────
+app.use('/api', userRoutes);
+app.use('/api/menu/user', menurouter);  // FIX: Changed path to avoid conflict
+app.use('/api/orders', orderRoutes);
+app.use('/api/reservations', reservationsRoutes);
+app.use('/api', Info);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on Port: ${PORT}`));

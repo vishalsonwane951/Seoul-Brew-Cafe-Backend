@@ -9,10 +9,10 @@ import UserModel from "../models/userModel.js"
 
 export const registerUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password, admin } = req.body;
+    const { firstName, lastName, email, phone, password } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
     const existingUser = await UserModel.findOne({ email });
@@ -20,15 +20,16 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const name = `${firstName} ${lastName}`;
+    const name = `${firstName || ''} ${lastName || ''}`.trim();
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new UserModel({ // ✅ use UserModel here
+    // FIX: Never allow admin creation via registration - always default to false
+    const user = new UserModel({
       name,
       email,
       password: hashedPassword,
       phone,
-      admin: admin || false,
+      admin: false,  // Always false for public registration
     });
 
     await user.save();
