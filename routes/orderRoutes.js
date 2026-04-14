@@ -19,7 +19,7 @@ router.patch("/:id/cancel", protect, cancelOrder);
 
 router.get("/", protect, admin, getOrders);
 router.get("/:id", protect, getOrder);
-router.patch("/:id/advance",admin, advanceOrderStatus);
+router.patch("/:id/advance",protect,admin, advanceOrderStatus);
 router.put("/:orderId/status", admin, updateOrderStatus);
 
 

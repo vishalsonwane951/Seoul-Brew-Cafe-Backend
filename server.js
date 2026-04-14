@@ -29,15 +29,13 @@ const app = express();
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
   : [
-      'https://cafegoodluck.netlify.app',
-      'http://localhost:5173',
       'https://seoul-brew-cafe-frontend.vercel.app',
-      'https://seoulbrewcafes.netlify.app'
+      'http://localhost:5173',
     ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // allow non-browser requests (like Postman)
+    if (!origin) return callback(null, true); 
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -55,7 +53,7 @@ const server = http.createServer(app);
 
 export const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: "https://seoul-brew-cafe-frontend.vercel.app" || 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   },
 });
