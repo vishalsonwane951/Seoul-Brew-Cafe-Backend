@@ -27,6 +27,7 @@ const app = express();
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map(url => url.trim().replace(/\/$/, ''))
   : [
+      'https://seoul-brew-cafe.netlify.app',
       'https://seoul-brew-cafe-frontend.vercel.app',
       'http://localhost:5173',
     ];
