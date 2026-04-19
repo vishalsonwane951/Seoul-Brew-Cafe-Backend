@@ -25,13 +25,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.use(cors({
-  origin: "https://seoul-brew-cafe.netlify.app",
+  origin: [
+    "https://seoul-brew-cafe-frontend.vercel.app",
+    "http://localhost:5173"
+  ],
   credentials: true,
-}));
+}));;
 
 // ✅ Handle preflight requests FIRST, before any routes
-app.options('/{*any}', cors(corsOptions));
-app.use(cors(corsOptions));
+// app.options('/{*any}', cors(corsOptions));
+// app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
