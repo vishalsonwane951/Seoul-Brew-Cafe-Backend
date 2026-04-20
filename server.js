@@ -4,9 +4,11 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import http from 'http';
-import mongoose from 'mongoose';
 import { Server } from 'socket.io';
+
 import ConnectDB from './config/db.js';
+
+// Routes
 import userRoutes from './routes/userRoutes.js';
 import menurouter from './routes/menuroutes.js';
 import orderRoutes from './routes/orderRoutes.js';
@@ -19,41 +21,39 @@ import inventoryRoutes from './routes/admin/inventoryRoutes.js';
 import s3Route from './routes/s3.js';
 
 dotenv.config();
-ConnectDB();
+
+// ✅ FIX: define allowedOrigins (THIS WAS MISSING)
+const allowedOrigins = [
+  "https://seoul-brew-cafe-frontend-2en0uq1u2-vishal-sonwanes-projects.vercel.app",
+  "https://seoul-brew-cafe-frontend.vercel.app",
+  "http://localhost:5173"
+];
+
+// DB connection (safe)
+ConnectDB().catch(err => {
+  console.error("❌ DB Connection Error:", err);
+  process.exit(1);
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const app = express();
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
+// ✅ FIX: simple stable CORS (NO CRASH)
+app.use(cors({
+  origin: allowedOrigins,
   credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
-// ✅ Handle preflight requests FIRST, before any routes
-// app.options('/{*any}', cors(corsOptions));
-// app.use(cors(corsOptions));
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+}));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-
-// HTTp scoket.io
+// HTTP Server
 const server = http.createServer(app);
 
+// Socket.IO
 export const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -62,6 +62,7 @@ export const io = new Server(server, {
   },
 });
 
+// Attach io to request
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -69,17 +70,18 @@ app.use((req, res, next) => {
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
 });
 
-// test route
-
+// Test route
 app.get('/', (req, res) => {
-  res.send("AWS Servers Is Running/Working");
+  res.send("AWS Server is Running");
 });
-// ── Routes ─────────────────────────────────────────────────────────────────
+
+// Routes
 app.use('/api/s3', s3Route);
 
 // Admin
@@ -95,5 +97,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/reservations', reservationsRoutes);
 app.use('/api', Info);
 
+// Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on Port: ${PORT}`));
+server.listen(PORT, () =>
+  console.log(`🚀 Server running on Port: ${PORT}`)
+);
