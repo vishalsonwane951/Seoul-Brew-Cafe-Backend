@@ -68,9 +68,9 @@ io.on('connection', (socket) => {
 
 // test route
 
-app.use('/',(req,res)=> {
-  res.send("AWS Serviers Is Running/Working")
-})
+app.get('/', (req, res) => {
+  res.send("AWS Servers Is Running/Working");
+});
 // ── Routes ─────────────────────────────────────────────────────────────────
 app.use('/api/s3', s3Route);
 
