@@ -76,7 +76,7 @@ app.use('/api/s3', s3Route);
 
 // Admin
 app.use('/api/menu', menuRoutes);
-app.use('/api', reservationRoutes);
+app.use('/api',   );
 app.use('/api/staff', staffRoutes);
 app.use('/api/inventory', inventoryRoutes);
 
