@@ -26,6 +26,7 @@ const app = express();
 
 const allowedOrigins = [
   // "https://seou-brew-cafe.netlify.app",
+  "https://seoul-brew-cafe-frontend-2en0uq1u2-vishal-sonwanes-projects.vercel.app",
   "https://seoul-brew-cafe-frontend.vercel.app",
   "http://localhost:5173"
  ];
