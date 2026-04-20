@@ -25,6 +25,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 const allowedOrigins = [
+  "https://seou-brew-cafe.netlify.app",
   "https://seoul-brew-cafe-frontend.vercel.app",
   "http://localhost:5173"
 ];
