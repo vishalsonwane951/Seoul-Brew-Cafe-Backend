@@ -24,17 +24,23 @@ ConnectDB();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-const allowedOrigins = [
-  // "https://seou-brew-cafe.netlify.app",
-  "https://seoul-brew-cafe-frontend-2en0uq1u2-vishal-sonwanes-projects.vercel.app",
-  "https://seoul-brew-cafe-frontend.vercel.app",
-  "http://localhost:5173"
- ];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
 
-app.use(cors({
-  origin: allowedOrigins,
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
-}));
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // ✅ Handle preflight requests FIRST, before any routes
 // app.options('/{*any}', cors(corsOptions));
