@@ -3,7 +3,8 @@ import {
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
-  toggleAvailability
+  toggleAvailability,
+  getMenuAdmin
 } from "../../controllers/admin/menucontroller.js";
 
 import { protect, admin } from "../../middleware/authMiddleware.js";
@@ -13,6 +14,7 @@ const router = express.Router();
 // Public route: Get all menu items (frontend can use admin token for full view)
 // router.get("/", protect, admin, getMenu);
 // Admin routes: require admin authorization
+router.post("/menu/admin", protect, admin, getMenuAdmin );
 router.post("/", protect, admin, addMenuItem);
 router.put("/:itemId", protect, admin, updateMenuItem);
 router.delete("/:itemId", protect, admin, deleteMenuItem);
