@@ -25,6 +25,7 @@ dotenv.config();
 // ✅ FIX: define allowedOrigins (THIS WAS MISSING)
 const allowedOrigins = [
   "https://seoul-brew-cafe-frontend.vercel.app",
+  "https://seoul-brew-cafe-frontend-git-pr-f48798-vishal-sonwanes-projects.vercel.app",
   "http://localhost:5173"
 ];
 
