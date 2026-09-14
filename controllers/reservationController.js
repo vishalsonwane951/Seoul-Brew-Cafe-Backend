@@ -125,3 +125,48 @@ export const deleteReservation = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getMyReservations = async (req, res) => {
+  try {
+    const reservations = await Reservation.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json(
+      reservations.map((r) => ({ ...r, _id: r._id.toString() }))
+    );
+  } catch (error) {
+    console.error("Get my reservations error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ✅ NEW: Let a customer cancel their own still-pending reservation
+export const cancelMyReservation = async (req, res) => {
+  try {
+    const reservation = await Reservation.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+
+    if (reservation.status !== "Pending") {
+      return res.status(400).json({
+        message: `Cannot cancel a reservation that is already ${reservation.status}`,
+      });
+    }
+
+    reservation.status = "Cancelled";
+    await reservation.save();
+
+    if (req.io) req.io.emit("reservations:updated");
+
+    res.json({ success: true, reservation });
+  } catch (error) {
+    console.error("Cancel reservation error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

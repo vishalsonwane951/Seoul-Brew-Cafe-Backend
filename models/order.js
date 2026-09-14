@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const STATUS_FLOW = {
-  "Dine-In": ["Pending","Accepted", "Preparing","Ready", "Served"],
-  "Takeaway": ["Pending","Accepted", "Preparing", "Ready", "Picked Up"],
-  "Delivery": ["Pending","Accepted", "Preparing", "Ready", "Out for Delivery", "Delivered"],
+  "Dine-In": ["Pending", "Accepted", "Preparing", "Ready", "Served", "Payment Done"],
+  "Takeaway": ["Pending", "Accepted", "Preparing", "Ready", "Picked Up", "Payment Done"],
+  "Delivery": ["Pending", "Accepted", "Preparing", "Ready", "Out for Delivery", "Delivered", "Payment Done"],
 };
 
 const orderSchema = new mongoose.Schema(
@@ -14,7 +14,6 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
-    /* ✅ ADD CUSTOMER INFO */
     name: {
       type: String,
       required: true,
@@ -79,19 +78,22 @@ const orderSchema = new mongoose.Schema(
         "Picked Up",
         "Out for Delivery",
         "Delivered",
+        "Payment Done",
         "Cancelled",
       ],
-      default: "Accepted",
+      default: "Pending",
     },
 
     statusTimestamps: {
-      Accepted: { type: Date, default: () => new Date() },
+      Pending: { type: Date, default: () => new Date() },
+      Accepted: { type: Date, default: null },
       Preparing: { type: Date, default: null },
-      Served: { type: Date, default: null },
       Ready: { type: Date, default: null },
+      Served: { type: Date, default: null },
       "Picked Up": { type: Date, default: null },
       "Out for Delivery": { type: Date, default: null },
       Delivered: { type: Date, default: null },
+      "Payment Done": { type: Date, default: null },
       Cancelled: { type: Date, default: null },
     },
 
@@ -108,30 +110,48 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
-/* Advance status safely */
-orderSchema.methods.advanceStatus = function () {
-
-  if (this.status === "Cancelled") return null;
+/**
+ * Advance status safely.
+ * If targetStatus is provided, it must match the expected next step.
+ * Returns { status: <newStatus> } on success, or { error: <reason> } on failure.
+ */
+orderSchema.methods.advanceStatus = function (targetStatus) {
+  if (this.status === "Cancelled") {
+    return { error: "Order is cancelled and cannot be advanced" };
+  }
 
   const flow = STATUS_FLOW[this.orderType];
-
-  if (!flow) return null;
+  if (!flow) {
+    return { error: `Unknown orderType "${this.orderType}"` };
+  }
 
   const currentIndex = flow.indexOf(this.status);
 
-  if (currentIndex < 0 || currentIndex >= flow.length - 1)
-    return null;
+  if (currentIndex < 0) {
+    return {
+      error: `Status "${this.status}" is not part of the ${this.orderType} flow`,
+    };
+  }
 
-  const nextStatus = flow[currentIndex + 1];
+  if (currentIndex >= flow.length - 1) {
+    return { error: `Order already at final status "${this.status}"` };
+  }
 
-  this.status = nextStatus;
+  const expectedNext = flow[currentIndex + 1];
 
-  this.statusTimestamps[nextStatus] = new Date();
+  if (targetStatus && targetStatus !== expectedNext) {
+    return {
+      error: `Invalid transition: expected "${expectedNext}" but received "${targetStatus}"`,
+    };
+  }
 
+  this.status = expectedNext;
+  this.statusTimestamps[expectedNext] = new Date();
   this.updatedAt = new Date();
 
-  return this.status;
+  return { status: expectedNext };
 };
+
+console.log("✅ order.js model loaded from:", import.meta.url);
 
 export default mongoose.model("Order", orderSchema);

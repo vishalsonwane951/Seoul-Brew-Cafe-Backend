@@ -81,3 +81,17 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: err.message || "Login failed" });
   }
 };
+
+// controllers/userController.js
+export const getProfile = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user._id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("Get profile error:", err); // add this too — you're not logging it server-side right now
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};

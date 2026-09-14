@@ -1,109 +1,130 @@
-import Reservation from '../../models/Reservation.js';
+import Reservation from "../../models/Reservation.js";
 
-// GET ALL RESERVATIONS
-export const getReservations = async (req, res) => {
+// Create Reservation
+export const createReservation = async (req, res) => {
   try {
-    const reservations = await Reservation.find().sort({ createdAt: -1 });
+    const { customerName, email, phone, table, date, time, guests, specialRequest } = req.body;
 
-    const formatted = reservations.map(r => ({
-      _id: r._id,
-      customerName: r.customerName,
-      phone: r.phone,
-      date: r.date,
-      time: r.time,
-      guests: r.guests,
-      table: r.table,          // <-- FIX: was missing entirely, so the
-                                 //     frontend always received `table: undefined`
-                                 //     even for reservations that had a table saved.
-      notes: r.specialRequest,
-      status: r.status,
-    }));
-
-    res.json({
-      success: true,
-      reservations: formatted,
+    const reservation = new Reservation({
+      user: req.user?._id || null,
+      customerName,
+      email,
+      phone,
+      date,
+      time,
+      guests,
+      specialRequest,
+      table,
+      status: "Pending",
     });
 
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
+    const savedReservation = await reservation.save();
 
+    // Emit real-time event
+    req.io.emit("reservations:updated");
 
-export const updateReservationStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    // FIX: was only reading `status`, so when the frontend sent
-    // { status: 'Approved', table: 'T-03' } during Confirm, the `table`
-    // value was silently discarded and never written to the DB.
-    const { status, table } = req.body;
-
-    // Build the update object dynamically so we only touch fields that
-    // were actually sent (e.g. a plain status change like "Done"/"Cancelled"
-    // won't accidentally overwrite an existing table with `undefined`).
-    const update = { status };
-    if (table !== undefined) {
-      update.table = table;
-    }
-
-    const reservation = await Reservation.findByIdAndUpdate(
-      id,
-      update,
-      { new: true } // returns the document AFTER the update (Mongoose option name)
-    );
-
-    if (!reservation) {
-      return res.status(404).json({
-        success: false,
-        message: 'Reservation not found',
-      });
-    }
-
-    res.json({
+    res.status(201).json({
       success: true,
       reservation: {
-        _id: reservation._id,
-        customerName: reservation.customerName,
-        phone: reservation.phone,
-        date: reservation.date,
-        time: reservation.time,
-        guests: reservation.guests,
-        table: reservation.table,   // <-- FIX: also missing from the response,
-                                     //     so even a successful save wouldn't
-                                     //     have been reflected without a refetch.
-        notes: reservation.specialRequest,
-        status: reservation.status,
+        _id: savedReservation._id,
+        customerName: savedReservation.customerName,
+        email: savedReservation.email,
+        phone: savedReservation.phone,
+        date: savedReservation.date,
+        time: savedReservation.time,
+        table: savedReservation.table,
+        guests: savedReservation.guests,
+        specialRequest: savedReservation.specialRequest,
+        status: savedReservation.status,
       },
     });
 
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
+// Get All Reservations (with optional date filter)
+export const getReservations = async (req, res) => {
+  try {
+    const { date } = req.query;
 
-// DELETE RESERVATION
+    const filter = date ? { date: { $regex: `^${date}` } } : {};
+
+    const reservations = await Reservation.find(filter)
+      .select('customerName email phone date time guests table status specialRequest')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json(reservations);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update Reservation Status
+export const updateReservationStatus = async (req, res) => {
+  try {
+    const reservation = await Reservation.findById(req.params.id);
+
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+
+    reservation.status = req.body.status;
+    if (req.body.table) reservation.table = req.body.table;
+
+    const updatedReservation = await reservation.save();
+
+    // Emit real-time event
+    req.io.emit("reservations:updated");
+
+    res.json(updatedReservation);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update Reservation Details
+export const updateReservation = async (req, res) => {
+  try {
+    const { customerName, email, phone, date, time, guests, table, specialRequest } = req.body;
+
+    const reservation = await Reservation.findByIdAndUpdate(
+      req.params.id,
+      { customerName, email, phone, date, time, guests, table, specialRequest },
+      { new: true }
+    ).lean();
+
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+
+    // Emit real-time event
+    req.io.emit("reservations:updated");
+
+    res.json(reservation);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete Reservation
 export const deleteReservation = async (req, res) => {
   try {
-    const { id } = req.params;
+    const reservation = await Reservation.findByIdAndDelete(req.params.id);
 
-    await Reservation.findByIdAndDelete(id);
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
 
-    res.json({
-      success: true,
-      message: "Reservation deleted",
-    });
+    // Emit real-time event
+    req.io.emit("reservations:updated");
 
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.json({ success: true, message: "Reservation deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
+
+// ✅ NEW: Get the logged-in user's own reservations (mobile app Reservation tab)

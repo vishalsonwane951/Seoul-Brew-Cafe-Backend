@@ -13,19 +13,23 @@ import userRoutes from './routes/userRoutes.js';
 import menurouter from './routes/menuroutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import reservationsRoutes from './routes/reservationRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 import Info from './controllers/Info.js';
 import menuRoutes from './routes/admin/menuRoutes.js';
 import reservationRoutes from './routes/admin/reservationRoutes.js';
 import staffRoutes from './routes/admin/staffRoutes.js';
 import inventoryRoutes from './routes/admin/inventoryRoutes.js';
 import s3Route from './routes/s3.js';
+import paymentRoutes from "./routes/payment.routes.js";
+
+
 
 dotenv.config();
 
 // ✅ FIX: define allowedOrigins (THIS WAS MISSING)
 const allowedOrigins = [
   "https://seoul-brew-cafe-frontend.vercel.app",
-  "https://seoul-brew-cafe-frontend-git-pr-f48798-vishal-sonwanes-projects.vercel.app",
   "http://localhost:5173"
 ];
 
@@ -86,17 +90,19 @@ app.use('/api/s3', s3Route);
 
 // Admin
 app.use('/api/menu', menuRoutes);
-app.use('/api', reservationRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/inventory', inventoryRoutes);
 
-// User
 app.use('/api', userRoutes);
+app.use('/api', reservationRoutes);
 app.use('/api/menu/user', menurouter);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reservations', reservationsRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/feedback', feedbackRoutes);
 app.use('/api', Info);
 
+app.use("/api/payments", paymentRoutes);
 // Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () =>

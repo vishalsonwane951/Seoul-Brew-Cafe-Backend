@@ -4,7 +4,8 @@ import {
   getOrders,
   getOrder,
   updateOrderStatus,
-  getOrderById ,
+  getOrderById,
+  getMyOrders,
   advanceOrderStatus,
   cancelOrder
 } from "../controllers/orderController.js";
@@ -15,14 +16,11 @@ const router = express.Router();
 router.post("/", protect, placeOrder);
 router.patch("/:id/cancel", protect, cancelOrder);
 
-// Admin routed
+router.get("/my-orders", protect, getMyOrders);
 
 router.get("/", protect, admin, getOrders);
 router.get("/:id", protect, getOrder);
-router.patch("/:id/advance",protect,admin, advanceOrderStatus);
-router.put("/:orderId/status",protect, admin, updateOrderStatus);
-
-
-router.get("/my-orders", protect, getOrderById );
+router.patch("/:id/advance", protect, admin, advanceOrderStatus);
+router.put("/:orderId/status", protect, admin, updateOrderStatus);
 
 export default router;
