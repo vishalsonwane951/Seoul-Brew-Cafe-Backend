@@ -1,5 +1,7 @@
 import Reservation from "../../models/Reservation.js";
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 // Create Reservation
 export const createReservation = async (req, res) => {
   try {
@@ -44,23 +46,45 @@ export const createReservation = async (req, res) => {
   }
 };
 
-// Get All Reservations (with optional date filter)
-export const getReservations = async (req, res) => {
+
+export const getAllReservations = async (req, res) => {
   try {
-    const { date } = req.query;
-
-    const filter = date ? { date: { $regex: `^${date}` } } : {};
-
-    const reservations = await Reservation.find(filter)
-      .select('customerName email phone date time guests table status specialRequest')
-      .sort({ createdAt: -1 })
-      .lean();
-
-    res.json(reservations);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const reservations = await Reservation.find().sort({ _id: -1 }).lean();
+    return res.status(200).json(reservations);
+  } catch (err) {
+    console.error("getAllReservations:", err);
+    return res.status(500).json({ message: "Failed to fetch reservations" });
   }
 };
+
+
+// Get All Reservations (with optional date filter)
+export const getReservationsByDate = async (req, res) => {
+  try {
+    const { date } = req.params;
+ 
+    if (!DATE_RE.test(date)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid date. Use the format YYYY-MM-DD." });
+    }
+ 
+    // Anchored prefix match: works whether the stored value is
+    // "2026-09-20" or an ISO string like "2026-09-20T00:00:00.000Z".
+    // `date` is validated above, so it is safe to put in a regex.
+    const reservations = await Reservation.find({
+      date: { $regex: `^${date}` },
+    })
+      .sort({ _id: -1 })
+      .lean();
+ 
+    return res.status(200).json(reservations);
+  } catch (err) {
+    console.error("getReservationsByDate:", err);
+    return res.status(500).json({ message: "Failed to fetch reservations" });
+  }
+};
+ 
 
 // Update Reservation Status
 export const updateReservationStatus = async (req, res) => {

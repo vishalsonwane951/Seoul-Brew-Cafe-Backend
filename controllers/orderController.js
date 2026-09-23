@@ -8,7 +8,36 @@ import User from "../models/userModel.js";
 
 console.log("✅ orderController.js loaded from:", import.meta.url);
 
+// Shared formatter so REST (getOrders) and socket emits (order:new / order:updated /
+// order:cancelled) always send the exact same shape to the frontend.
+const formatOrder = (o) => ({
+  id: o._id.toString(),
+  _id: o._id.toString(), // kept for compatibility with code that still reads _id
+  customer: o.user?.name || o.name || "Unknown",
+  orderType: o.orderType,
+  table: o.table || "N/A",
+  items: Array.isArray(o.items)
+    ? o.items
+        .map((i) => `${i.title || "Item"} x${i.quantity || 1}`)
+        .join(", ")
+    : "-",
+  total: o.total,
+  status: o.status,
+  statusTimestamps: o.statusTimestamps,
+  orderPlacedAt: o.orderPlacedAt,
+  updatedAt: o.updatedAt,
+});
+
+// Prefer req.io (attached by socket middleware) but fall back to getIO()
+// so events still fire even if that middleware isn't wired up on a route.
+const emitEvent = (req, event, payload) => {
+  const io = req.io || getIO();
+  if (io) io.emit(event, payload);
+};
+
 export const placeOrder = async (req, res) => {
+
+
   try {
     const { orderType, table, items, total } = req.body;
 
@@ -91,10 +120,13 @@ export const placeOrder = async (req, res) => {
       }
     }
 
-    if (req.io) {
-      req.io.emit("inventory:refresh");
-      req.io.emit("menu:refresh");
-    }
+    // Populate the user so the formatted payload has a customer name, then
+    // broadcast the new order to every connected admin dashboard in real time.
+    const populatedOrder = await savedOrder.populate("user", "name email admin");
+    emitEvent(req, "order:new", formatOrder(populatedOrder));
+
+    emitEvent(req, "inventory:refresh");
+    emitEvent(req, "menu:refresh");
 
     res.status(201).json(savedOrder);
   } catch (err) {
@@ -162,23 +194,9 @@ export const getOrders = async (req, res) => {
   try {
     const orders = await Order.find()
       .populate("user", "name email admin")
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: -1 }); // -1 = newest first, 1 = oldest first
 
-    const formatted = orders.map((o) => ({
-      id: o._id,
-      customer: o.user ? o.user.name : "Unknown",
-      orderType: o.orderType,
-      table: o.table || "N/A",
-      items: Array.isArray(o.items)
-        ? o.items
-            .map((i) => `${i.title || "Item"} x${i.quantity || 1}`)
-            .join(", ")
-        : "-",
-      total: o.total,
-      status: o.status,
-      statusTimestamps: o.statusTimestamps,
-      orderPlacedAt: o.orderPlacedAt,
-    }));
+    const formatted = orders.map(formatOrder);
 
     res.json(formatted);
   } catch (err) {
@@ -235,15 +253,11 @@ export const advanceOrderStatus = async (req, res) => {
         updatedAt: new Date(),
       },
       { new: true }
-    );
+    ).populate("user", "name email admin");
 
-    if (req.io) {
-      req.io.emit("orderStatusUpdated", {
-        id: updatedOrder._id.toString(),
-        status: updatedOrder.status,
-        statusTimestamps: updatedOrder.statusTimestamps,
-      });
-    }
+    // Broadcast to all connected clients so every dashboard updates live,
+    // matching the same shape getOrders/order:new already use.
+    emitEvent(req, "order:updated", formatOrder(updatedOrder));
 
     res.status(200).json({
       success: true,
@@ -286,6 +300,9 @@ export const updateOrder = async (req, res) => {
     }
 
     await order.save();
+
+    const populatedOrder = await order.populate("user", "name email admin");
+    emitEvent(req, "order:updated", formatOrder(populatedOrder));
 
     res.json({
       message: "Order updated successfully",
@@ -337,6 +354,10 @@ export const updateOrderStatus = async (req, res) => {
 
     order.status = status;
     await order.save();
+
+    const populatedOrder = await order.populate("user", "name email admin");
+    emitEvent(req, "order:updated", formatOrder(populatedOrder));
+
     res.json(order);
   } catch (err) {
     console.error(err);
@@ -369,6 +390,9 @@ export const cancelOrder = async (req, res) => {
     order.statusTimestamps.Cancelled = new Date();
 
     await order.save({ validateBeforeSave: false });
+
+    const populatedOrder = await order.populate("user", "name email admin");
+    emitEvent(req, "order:cancelled", formatOrder(populatedOrder));
 
     res.json({ success: true, order });
   } catch (err) {

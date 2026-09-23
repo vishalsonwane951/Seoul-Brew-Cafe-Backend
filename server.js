@@ -89,12 +89,12 @@ app.get('/', (req, res) => {
 app.use('/api/s3', s3Route);
 
 // Admin
-app.use('/api/menu', menuRoutes);
-app.use('/api/staff', staffRoutes);
-app.use('/api/inventory', inventoryRoutes);
+app.use('/api/admin/menu', menuRoutes);
+app.use('/api/admin/staff', staffRoutes);
+app.use('/api/admin/inventory', inventoryRoutes);
 
 app.use('/api', userRoutes);
-app.use('/api', reservationRoutes);
+app.use('/api/admin', reservationRoutes);
 app.use('/api/menu/user', menurouter);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reservations', reservationsRoutes);
@@ -103,7 +103,6 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api', Info);
 
 app.use("/api/payments", paymentRoutes);
-// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () =>
   console.log(`🚀 Server running on Port: ${PORT}`)

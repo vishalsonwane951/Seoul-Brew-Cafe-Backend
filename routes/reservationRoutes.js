@@ -1,7 +1,6 @@
 import express from "express";
 import {
   createReservation,
-  getReservations,
   updateReservationStatus,
   getMyReservations,
   // cancelMyReservation,
@@ -19,7 +18,7 @@ router.post("/", optionalAuth, createReservation);
 router.get("/my-reservations", protect, getMyReservations);
 // router.patch("/:id/cancel", protect, cancelMyReservation);
 
-router.get("/", getReservations);
+// router.get("/", getReservations);
 router.put("/:id", updateReservationStatus);
 
 export default router;

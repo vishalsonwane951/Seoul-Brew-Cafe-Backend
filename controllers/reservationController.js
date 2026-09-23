@@ -44,22 +44,22 @@ export const createReservation = async (req, res) => {
 };
 
 // Get All Reservations (with optional date filter)
-export const getReservations = async (req, res) => {
-  try {
-    const { date } = req.query;
+// export const getReservations = async (req, res) => {
+//   try {
+//     const { date } = req.query;
 
-    const filter = date ? { date: { $regex: `^${date}` } } : {};
+//     const filter = date ? { date: { $regex: `^${date}` } } : {};
 
-    const reservations = await Reservation.find(filter)
-      .select('customerName email phone date time guests table status specialRequest')
-      .sort({ createdAt: -1 })
-      .lean();
+//     const reservations = await Reservation.find(filter)
+//       .select('customerName email phone date time guests table status specialRequest')
+//       .sort({ createdAt: -1 })
+//       .lean();
 
-    res.json(reservations);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//     res.json(reservations);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 // Update Reservation Status
 export const updateReservationStatus = async (req, res) => {
