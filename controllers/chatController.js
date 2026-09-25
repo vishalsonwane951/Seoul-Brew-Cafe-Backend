@@ -1,6 +1,5 @@
 import Order from "../models/order.js";
 
-// Statuses that mean an order's journey is fully finished.
 const TERMINAL_STATUSES = ["Payment Done", "Cancelled"];
 const isActive = (status) => !TERMINAL_STATUSES.includes(status);
 
@@ -36,8 +35,6 @@ const formatOrderStatusReply = (order) => {
   return `Your ${order.orderType} order (placed ${placedAt}) is currently **${order.status}**. I'll keep this updated as it moves along — you can also watch it live on the Home screen.`;
 };
 
-// Very small keyword-based intent classifier — no external AI service
-// required, keeps this self-contained inside the existing backend.
 const classifyIntent = (raw) => {
   const msg = (raw || "").toLowerCase();
 
@@ -45,22 +42,17 @@ const classifyIntent = (raw) => {
 
   if (has("order", "track", "status", "where is my", "my food", "my coffee"))
     return "order_status";
-  if (has("cancel"))
-    return "order_status";
-  if (has("menu", "price", "cost", "item", "food", "drink"))
-    return "menu";
-  if (has("hour", "time", "open", "close", "timing"))
-    return "hours";
+  if (has("cancel")) return "order_status";
+  if (has("menu", "price", "cost", "item", "food", "drink")) return "menu";
+  if (has("hour", "time", "open", "close", "timing")) return "hours";
   if (has("location", "address", "where are you", "direction"))
     return "location";
   if (has("contact", "support", "phone", "call", "email", "help"))
     return "contact";
   if (has("feedback", "review", "complain", "complaint", "suggestion"))
     return "feedback";
-  if (has("hi", "hello", "hey"))
-    return "greeting";
-  if (has("thank"))
-    return "thanks";
+  if (has("hi", "hello", "hey")) return "greeting";
+  if (has("thank")) return "thanks";
 
   return "unknown";
 };
@@ -70,12 +62,15 @@ export const chatMessage = async (req, res) => {
     const { message, selectedOrderId } = req.body;
     const userId = req.user._id;
 
-    // ── The user picked a specific order from a disambiguation list ──────
     if (selectedOrderId) {
-      const order = await Order.findOne({ _id: selectedOrderId, user: userId }).lean();
+      const order = await Order.findOne({
+        _id: selectedOrderId,
+        user: userId,
+      }).lean();
       if (!order) {
         return res.json({
-          reply: "I couldn't find that order — it may have been removed. Anything else I can help with?",
+          reply:
+            "I couldn't find that order — it may have been removed. Anything else I can help with?",
           quickReplies: DEFAULT_QUICK_REPLIES,
         });
       }
@@ -93,13 +88,11 @@ export const chatMessage = async (req, res) => {
 
         if (orders.length === 0) {
           return res.json({
-            reply: "You haven't placed any orders yet. Want to take a look at the menu?",
+            reply:
+              "You haven't placed any orders yet. Want to take a look at the menu?",
             quickReplies: ["Menu & prices", "Cafe hours & location"],
           });
         }
-
-        // Prefer active (in-progress) orders when checking status, but
-        // fall back to the full recent history if nothing is active.
         const active = orders.filter((o) => isActive(o.status));
         const candidates = active.length > 0 ? active : orders.slice(0, 5);
 
@@ -157,7 +150,8 @@ export const chatMessage = async (req, res) => {
 
       case "greeting":
         return res.json({
-          reply: "Hey there! 👋 I'm the Seoul Brew Cafe assistant. What can I help you with?",
+          reply:
+            "Hey there! 👋 I'm the Seoul Brew Cafe assistant. What can I help you with?",
           quickReplies: DEFAULT_QUICK_REPLIES,
         });
 
@@ -169,8 +163,7 @@ export const chatMessage = async (req, res) => {
 
       default:
         return res.json({
-          reply:
-            "I'm not sure I follow, but here's what I can help with:",
+          reply: "I'm not sure I follow, but here's what I can help with:",
           quickReplies: DEFAULT_QUICK_REPLIES,
         });
     }

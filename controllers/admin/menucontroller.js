@@ -1,21 +1,18 @@
-// controllers/menuController.js
 import MenuItem from "../../models/menuItem.js";
 import NodeCache from "node-cache";
 
-// ✅ FIX: Instantiate cache (was referenced but never created)
-const menuCache = new NodeCache({ stdTTL: 60 }); // 60s TTL
+const menuCache = new NodeCache({ stdTTL: 60 });
 
 const MENU_SELECT =
   "title category price description imageUrl allergens kcal available stock sales recipe";
 
-// ── GET /menu/user — public facing (fast, cached) ─────────────────────────
 export const getMenuUser = async (req, res) => {
   try {
     const CACHE_KEY = "menu_user_public";
 
     const cached = menuCache.get(CACHE_KEY);
     if (cached) {
-      return res.json(cached); // ✅ ~1ms cached response
+      return res.json(cached);
     }
 
     const menu = await MenuItem.find({ available: true })
@@ -26,7 +23,6 @@ export const getMenuUser = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(500);
 
-    // ✅ FIX: Actually store result in cache (was missing)
     menuCache.set(CACHE_KEY, menu);
 
     res.json(menu);
@@ -35,7 +31,7 @@ export const getMenuUser = async (req, res) => {
   }
 };
 
-// ── GET /menu/admin — admin facing (no cache, includes unavailable) ────────
+// GET /menu/admin
 export const getMenuAdmin = async (req, res) => {
   try {
     const menu = await MenuItem.find()
@@ -48,7 +44,7 @@ export const getMenuAdmin = async (req, res) => {
   }
 };
 
-// ── POST /menu — add item ─────────────────────────────────────────────────
+// POST /menu — add item 
 export const addMenuItem = async (req, res) => {
   try {
     const {
@@ -82,7 +78,6 @@ export const addMenuItem = async (req, res) => {
       recipe: Array.isArray(recipe) ? recipe : [],
     });
 
-    // ✅ Invalidate cache so next fetch reflects new item
     menuCache.del("menu_user_public");
 
     if (req.io) req.io.emit("menu:refresh");
@@ -93,7 +88,7 @@ export const addMenuItem = async (req, res) => {
   }
 };
 
-// ── PUT /menu/:itemId — update item ──────────────────────────────────────
+//  PUT /menu/:itemId — update item ─
 export const updateMenuItem = async (req, res) => {
   try {
     const { itemId } = req.params;
@@ -107,7 +102,6 @@ export const updateMenuItem = async (req, res) => {
     if (!updatedItem)
       return res.status(404).json({ message: "Item not found" });
 
-    // ✅ Invalidate cache on update
     menuCache.del("menu_user_public");
 
     if (req.io) req.io.emit("menu:refresh");
@@ -117,7 +111,7 @@ export const updateMenuItem = async (req, res) => {
   }
 };
 
-// ── DELETE /menu/:itemId — delete item ───────────────────────────────────
+//  DELETE /menu/:itemId — delete item 
 export const deleteMenuItem = async (req, res) => {
   try {
     const { itemId } = req.params;
@@ -125,7 +119,6 @@ export const deleteMenuItem = async (req, res) => {
 
     if (!item) return res.status(404).json({ message: "Item not found" });
 
-    // ✅ Invalidate cache on delete
     menuCache.del("menu_user_public");
 
     if (req.io) req.io.emit("menu:refresh");
@@ -135,7 +128,7 @@ export const deleteMenuItem = async (req, res) => {
   }
 };
 
-// ── PATCH /menu/:id/availability — toggle availability ───────────────────
+//  PATCH /menu/:id/availability — toggle availability
 export const toggleAvailability = async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,7 +141,6 @@ export const toggleAvailability = async (req, res) => {
     menuItem.stock = menuItem.available;
     await menuItem.save();
 
-    // ✅ Invalidate cache on availability change
     menuCache.del("menu_user_public");
 
     if (req.io) req.io.emit("menu:refresh");

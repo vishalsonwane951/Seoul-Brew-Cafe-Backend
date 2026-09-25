@@ -6,20 +6,16 @@ import mongoose from "mongoose";
 import { getIO } from "../socket.js";
 import User from "../models/userModel.js";
 
-console.log("✅ orderController.js loaded from:", import.meta.url);
+// console.log("✅ orderController.js loaded from:", import.meta.url);
 
-// Shared formatter so REST (getOrders) and socket emits (order:new / order:updated /
-// order:cancelled) always send the exact same shape to the frontend.
 const formatOrder = (o) => ({
   id: o._id.toString(),
-  _id: o._id.toString(), // kept for compatibility with code that still reads _id
+  _id: o._id.toString(),
   customer: o.user?.name || o.name || "Unknown",
   orderType: o.orderType,
   table: o.table || "N/A",
   items: Array.isArray(o.items)
-    ? o.items
-        .map((i) => `${i.title || "Item"} x${i.quantity || 1}`)
-        .join(", ")
+    ? o.items.map((i) => `${i.title || "Item"} x${i.quantity || 1}`).join(", ")
     : "-",
   total: o.total,
   status: o.status,
@@ -27,17 +23,12 @@ const formatOrder = (o) => ({
   orderPlacedAt: o.orderPlacedAt,
   updatedAt: o.updatedAt,
 });
-
-// Prefer req.io (attached by socket middleware) but fall back to getIO()
-// so events still fire even if that middleware isn't wired up on a route.
 const emitEvent = (req, event, payload) => {
   const io = req.io || getIO();
   if (io) io.emit(event, payload);
 };
 
 export const placeOrder = async (req, res) => {
-
-
   try {
     const { orderType, table, items, total } = req.body;
 
@@ -119,10 +110,10 @@ export const placeOrder = async (req, res) => {
         });
       }
     }
-
-    // Populate the user so the formatted payload has a customer name, then
-    // broadcast the new order to every connected admin dashboard in real time.
-    const populatedOrder = await savedOrder.populate("user", "name email admin");
+    const populatedOrder = await savedOrder.populate(
+      "user",
+      "name email admin",
+    );
     emitEvent(req, "order:new", formatOrder(populatedOrder));
 
     emitEvent(req, "inventory:refresh");
@@ -194,7 +185,7 @@ export const getOrders = async (req, res) => {
   try {
     const orders = await Order.find()
       .populate("user", "name email admin")
-      .sort({ createdAt: -1 }); // -1 = newest first, 1 = oldest first
+      .sort({ createdAt: -1 });
 
     const formatted = orders.map(formatOrder);
 
@@ -229,9 +220,12 @@ export const advanceOrderStatus = async (req, res) => {
     }
 
     console.log(
-      "Current:", order.status,
-      "| Type:", order.orderType,
-      "| Target:", targetStatus
+      "Current:",
+      order.status,
+      "| Type:",
+      order.orderType,
+      "| Target:",
+      targetStatus,
     );
 
     const result = order.advanceStatus(targetStatus);
@@ -252,11 +246,9 @@ export const advanceOrderStatus = async (req, res) => {
         statusTimestamps: order.statusTimestamps,
         updatedAt: new Date(),
       },
-      { new: true }
+      { new: true },
     ).populate("user", "name email admin");
 
-    // Broadcast to all connected clients so every dashboard updates live,
-    // matching the same shape getOrders/order:new already use.
     emitEvent(req, "order:updated", formatOrder(updatedOrder));
 
     res.status(200).json({
@@ -378,7 +370,9 @@ export const cancelOrder = async (req, res) => {
     }
 
     if (
-      ["Served", "Picked Up", "Delivered", "Payment Done"].includes(order.status)
+      ["Served", "Picked Up", "Delivered", "Payment Done"].includes(
+        order.status,
+      )
     ) {
       return res.status(400).json({
         message: `Cannot cancel an order that is already ${order.status}`,

@@ -4,7 +4,7 @@ const {
   PHONEPE_MERCHANT_ID,
   PHONEPE_SALT_KEY,
   PHONEPE_SALT_INDEX = "1",
-  PHONEPE_ENV = "sandbox", // "sandbox" | "prod"
+  PHONEPE_ENV = "sandbox",
 } = process.env;
 
 export const PHONEPE_HOST =
@@ -21,10 +21,11 @@ export const buildXVerify = (payloadOrPath, isStatusCheck = false) => {
 };
 
 export const verifyCallbackXVerify = (base64Response, receivedXVerify) => {
-  const expected = crypto
-    .createHash("sha256")
-    .update(base64Response + PHONEPE_SALT_KEY)
-    .digest("hex") + `###${PHONEPE_SALT_INDEX}`;
+  const expected =
+    crypto
+      .createHash("sha256")
+      .update(base64Response + PHONEPE_SALT_KEY)
+      .digest("hex") + `###${PHONEPE_SALT_INDEX}`;
   return expected === receivedXVerify;
 };
 

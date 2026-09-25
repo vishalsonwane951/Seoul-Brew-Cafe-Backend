@@ -8,16 +8,16 @@ const reservationSchema = mongoose.Schema(
     phone: { type: String, required: true },
     date: { type: String, required: true },
     time: { type: String, required: true },
-    table :{},
+    table: {},
     guests: { type: Number, required: true },
     status: {
       type: String,
       enum: ["Pending", "Approved", "Declined", "Cancelled"],
       default: "Pending",
     },
-    specialRequest: { type: String }, 
+    specialRequest: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 reservationSchema.index({ createdAt: -1 });
 reservationSchema.index({ user: 1, createdAt: -1 });

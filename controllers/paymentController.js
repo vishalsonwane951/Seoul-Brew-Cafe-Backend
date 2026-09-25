@@ -8,8 +8,7 @@ import {
   merchantId,
 } from "../utils/phonepe.js";
 
-const APP_BASE_URL = process.env.APP_BASE_URL; // e.g. https://your-backend.example.com
-// Your mobile app's deep link scheme, e.g. "seoulbrew://payment-return"
+const APP_BASE_URL = process.env.APP_BASE_URL;
 const APP_DEEP_LINK_RETURN = process.env.APP_DEEP_LINK_RETURN;
 
 export const initiatePayment = async (req, res) => {
@@ -37,7 +36,7 @@ export const initiatePayment = async (req, res) => {
       merchantId,
       merchantTransactionId,
       merchantUserId: order.user.toString(),
-      amount: Math.round(Number(order.total) * 100), // paise
+      amount: Math.round(Number(order.total) * 100),
       redirectUrl: `${APP_BASE_URL}/api/payments/redirect/${merchantTransactionId}`,
       redirectMode: "REDIRECT",
       callbackUrl: `${APP_BASE_URL}/api/payments/callback`,
@@ -45,7 +44,9 @@ export const initiatePayment = async (req, res) => {
       paymentInstrument: { type: "PAY_PAGE" },
     };
 
-    const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64");
+    const base64Payload = Buffer.from(JSON.stringify(payload)).toString(
+      "base64",
+    );
     const xVerify = buildXVerify(base64Payload);
 
     const { data } = await axios.post(
@@ -56,12 +57,14 @@ export const initiatePayment = async (req, res) => {
           "Content-Type": "application/json",
           "X-VERIFY": xVerify,
         },
-      }
+      },
     );
 
     const redirectUrl = data?.data?.instrumentResponse?.redirectInfo?.url;
     if (!redirectUrl) {
-      return res.status(502).json({ message: "PhonePe did not return a checkout URL" });
+      return res
+        .status(502)
+        .json({ message: "PhonePe did not return a checkout URL" });
     }
 
     order.merchantTransactionId = merchantTransactionId;
@@ -74,10 +77,6 @@ export const initiatePayment = async (req, res) => {
     res.status(500).json({ message: "Failed to initiate payment" });
   }
 };
-
-// PhonePe redirects the browser/webview here after the user finishes on their page.
-// This is NOT proof of payment (only the S2S callback/status-check is) — just bounce
-// the webview back into the app via deep link so PaymentModal can close and poll status.
 export const paymentRedirect = async (req, res) => {
   const { merchantTransactionId } = req.params;
   if (APP_DEEP_LINK_RETURN) {
@@ -86,19 +85,29 @@ export const paymentRedirect = async (req, res) => {
   res.send("Payment complete — you can return to the app.");
 };
 
-// Server-to-server webhook PhonePe calls directly (needs a publicly reachable APP_BASE_URL)
 export const paymentCallback = async (req, res) => {
   try {
     const receivedXVerify = req.headers["x-verify"];
     const base64Response = req.body?.response;
-    if (!base64Response || !verifyCallbackXVerify(base64Response, receivedXVerify)) {
+    if (
+      !base64Response ||
+      !verifyCallbackXVerify(base64Response, receivedXVerify)
+    ) {
       return res.status(400).json({ message: "Invalid signature" });
     }
 
-    const decoded = JSON.parse(Buffer.from(base64Response, "base64").toString("utf8"));
-    const { merchantTransactionId, transactionId, code } = decoded.data || decoded;
+    const decoded = JSON.parse(
+      Buffer.from(base64Response, "base64").toString("utf8"),
+    );
+    const { merchantTransactionId, transactionId, code } =
+      decoded.data || decoded;
 
-    await applyPaymentResult(merchantTransactionId, code, transactionId, req.io);
+    await applyPaymentResult(
+      merchantTransactionId,
+      code,
+      transactionId,
+      req.io,
+    );
     res.json({ success: true });
   } catch (err) {
     console.error("paymentCallback error:", err.message);
@@ -106,8 +115,6 @@ export const paymentCallback = async (req, res) => {
   }
 };
 
-// Polled by the frontend as a fallback in case the webhook is delayed/unreachable
-// (e.g. local dev without a tunnel). Also updates the order if it's stale.
 export const checkPaymentStatus = async (req, res) => {
   try {
     const { merchantTransactionId } = req.params;
@@ -124,16 +131,33 @@ export const checkPaymentStatus = async (req, res) => {
 
     const code = data?.code;
     const transactionId = data?.data?.transactionId;
-    const order = await applyPaymentResult(merchantTransactionId, code, transactionId, req.io);
+    const order = await applyPaymentResult(
+      merchantTransactionId,
+      code,
+      transactionId,
+      req.io,
+    );
 
-    res.json({ success: true, paymentStatus: order?.paymentStatus, status: order?.status });
+    res.json({
+      success: true,
+      paymentStatus: order?.paymentStatus,
+      status: order?.status,
+    });
   } catch (err) {
-    console.error("checkPaymentStatus error:", err?.response?.data || err.message);
+    console.error(
+      "checkPaymentStatus error:",
+      err?.response?.data || err.message,
+    );
     res.status(500).json({ message: "Failed to check payment status" });
   }
 };
 
-async function applyPaymentResult(merchantTransactionId, code, transactionId, io) {
+async function applyPaymentResult(
+  merchantTransactionId,
+  code,
+  transactionId,
+  io,
+) {
   const order = await Order.findOne({ merchantTransactionId });
   if (!order) return null;
 

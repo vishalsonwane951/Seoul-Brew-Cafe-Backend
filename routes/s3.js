@@ -1,20 +1,19 @@
-import express from 'express';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import express from "express";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
-import { protect } from '../middleware/authMiddleware.js';
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ FIX 1: Disable auto-checksum injection
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
-  requestChecksumCalculation: "WHEN_REQUIRED",  // ← fixes CRC32 header mismatch
-  responseChecksumValidation: "WHEN_REQUIRED",  // ← fixes CRC32 header mismatch
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 router.get("/presign", protect, async (req, res) => {

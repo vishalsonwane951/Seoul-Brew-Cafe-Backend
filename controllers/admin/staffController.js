@@ -37,7 +37,11 @@ export const createStaff = async (req, res) => {
     const schedule = Array.isArray(body.schedule)
       ? body.schedule
       : typeof body.schedule === "string" && body.schedule
-        ? body.schedule.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 7)
+        ? body.schedule
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .slice(0, 7)
         : [];
 
     const staff = await Staff.create({
@@ -67,7 +71,11 @@ export const updateStaff = async (req, res) => {
       body.schedule = Array.isArray(body.schedule)
         ? body.schedule
         : typeof body.schedule === "string" && body.schedule
-          ? body.schedule.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 7)
+          ? body.schedule
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .slice(0, 7)
           : [];
     }
 
@@ -126,4 +134,3 @@ export const updateStaffStatus = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-

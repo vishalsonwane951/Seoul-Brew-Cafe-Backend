@@ -1,6 +1,6 @@
 import Feedback from "../models/feedback.js";
 
-// POST /api/feedback — used by the mobile app's Profile "Share feedback" card
+// POST /api/feedback
 export const submitFeedback = async (req, res) => {
   try {
     const { message, rating, name } = req.body;
@@ -18,20 +18,26 @@ export const submitFeedback = async (req, res) => {
 
     res.status(201).json(feedback);
   } catch (err) {
-    res.status(500).json({ message: err.message || "Failed to submit feedback." });
+    res
+      .status(500)
+      .json({ message: err.message || "Failed to submit feedback." });
   }
 };
 
 export const getMyFeedback = async (req, res) => {
   try {
-    const feedback = await Feedback.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const feedback = await Feedback.find({ user: req.user._id }).sort({
+      createdAt: -1,
+    });
     res.status(200).json(feedback);
   } catch (err) {
-    res.status(500).json({ message: err.message || "Failed to fetch feedback." });
+    res
+      .status(500)
+      .json({ message: err.message || "Failed to fetch feedback." });
   }
 };
 
-// GET /api/feedback — all feedback (for the admin panel, if ever wired up)
+// GET /api/feedback
 export const getAllFeedback = async (req, res) => {
   try {
     const feedback = await Feedback.find()

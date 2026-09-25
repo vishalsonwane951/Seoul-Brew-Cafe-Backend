@@ -13,7 +13,7 @@ const inventoryItemSchema = new mongoose.Schema(
     unit: { type: String, required: true }, // kg, L, pcs, etc.
     minQty: { type: Number, required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("InventoryItem", inventoryItemSchema);

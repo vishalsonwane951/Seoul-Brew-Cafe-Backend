@@ -1,16 +1,25 @@
-// controllers/menuController.js
 import Menu from "../models/menuItem.js";
 import MenuItem from "../models/menuItem.js";
 import InventoryItem from "../models/inventoryItem.js";
 
-// GET /api/menu – returns all items with inStockFromRecipe when recipe exists
+// GET /api/menu
 export const getMenu = async (req, res) => {
   try {
-  const items = await MenuItem.find({}).sort({ createdAt: -1 }).lean()
-    const ingredientIds = [...new Set(items.flatMap((m) => (m.recipe || []).map((r) => r.inventoryItemId?.toString()).filter(Boolean)))];
+    const items = await MenuItem.find({}).sort({ createdAt: -1 }).lean();
+    const ingredientIds = [
+      ...new Set(
+        items.flatMap((m) =>
+          (m.recipe || [])
+            .map((r) => r.inventoryItemId?.toString())
+            .filter(Boolean),
+        ),
+      ),
+    ];
     const inventoryMap = {};
     if (ingredientIds.length > 0) {
-      const invItems = await InventoryItem.find({ _id: { $in: ingredientIds } }).lean();
+      const invItems = await InventoryItem.find({
+        _id: { $in: ingredientIds },
+      }).lean();
       invItems.forEach((inv) => {
         inventoryMap[inv._id.toString()] = inv;
       });
@@ -27,7 +36,6 @@ export const getMenu = async (req, res) => {
       return {
         ...item,
         inStockFromRecipe,
-        // effective stock: manual stock AND (no recipe or recipe in stock)
         stock: item.stock && (inStockFromRecipe === null || inStockFromRecipe),
       };
     });
@@ -41,13 +49,23 @@ export const getMenu = async (req, res) => {
 // POST /api/menu/add-item
 export const createMenu = async (req, res) => {
   try {
-    const { category, title, description, price, imageUrl, available, allergens, kcal } = req.body;
+    const {
+      category,
+      title,
+      description,
+      price,
+      imageUrl,
+      available,
+      allergens,
+      kcal,
+    } = req.body;
 
     if (!category || !title || !price) {
-      return res.status(400).json({ message: "Category, title, and price are required" });
+      return res
+        .status(400)
+        .json({ message: "Category, title, and price are required" });
     }
 
-    // Create a new menu item
     const newItem = new MenuItem({
       category,
       title,
@@ -58,7 +76,7 @@ export const createMenu = async (req, res) => {
       available: available !== undefined ? available : true,
       allergens: allergens || "",
       kcal: kcal || 0,
-      sales: 0
+      sales: 0,
     });
 
     await newItem.save();
@@ -81,7 +99,7 @@ export const initMenu = async (req, res) => {
     const menu = new Menu({
       coffee: [],
       matcha: [],
-      food: []
+      food: [],
     });
 
     await menu.save();

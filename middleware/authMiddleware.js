@@ -41,12 +41,6 @@ export const admin = (req, res, next) => {
   next();
 };
 
-/**
- * Optional auth — attaches req.user when a valid token is present, but
- * never blocks the request when it's missing/invalid. Lets a route serve
- * both logged-in app users (so we can tag records with their user id) and
- * anonymous/guest submissions (e.g. the public website reservation form).
- */
 export const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -59,8 +53,6 @@ export const optionalAuth = async (req, res, next) => {
         admin: decoded.admin,
       };
     }
-  } catch (error) {
-    // Invalid/expired token on an optional route — proceed as a guest.
-  }
+  } catch (error) {}
   next();
 };

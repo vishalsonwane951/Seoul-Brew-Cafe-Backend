@@ -1,9 +1,8 @@
-// controllers/userController.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/userModel.js";
 
-// ── Register ───────────────────────────────────────────────────────────────
+// Register
 export const registerUser = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, password } = req.body;
@@ -22,7 +21,7 @@ export const registerUser = async (req, res) => {
     const name = `${firstName || ""} ${lastName || ""}`.trim();
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Never allow admin creation via public registration
+    //  Never allow admin creation via public registration
     const user = new UserModel({
       name,
       email,
@@ -44,7 +43,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// ── Login ──────────────────────────────────────────────────────────────────
+// ── Login ───
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -63,15 +62,13 @@ export const loginUser = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, email: user.email, admin: user.admin },
       secretKey,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
-
-    // ✅ REMOVED: console.log("Generated token:", token) — security risk
 
     res.status(200).json({
       message: "Login successful",
       token,
-       _id: user._id,
+      _id: user._id,
       admin: user.admin,
       name: user.name,
       email: user.email,
@@ -82,7 +79,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// controllers/userController.js
 export const getProfile = async (req, res) => {
   try {
     const user = await UserModel.findById(req.user._id).select("-password");
@@ -91,7 +87,7 @@ export const getProfile = async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    console.error("Get profile error:", err); // add this too — you're not logging it server-side right now
+    console.error("Get profile error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };

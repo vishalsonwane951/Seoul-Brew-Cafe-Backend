@@ -10,7 +10,10 @@ const getStatus = (pct) => {
 
 const toInventoryView = (item) => {
   const minQty = item.minQty || 1;
-  const pct = minQty > 0 ? Math.min(100, Math.round((item.currentQty / minQty) * 100)) : 0;
+  const pct =
+    minQty > 0
+      ? Math.min(100, Math.round((item.currentQty / minQty) * 100))
+      : 0;
   const status = getStatus(pct);
   const detail = `${item.currentQty}${item.unit} / Min ${item.minQty}${item.unit}`;
   return {
@@ -42,7 +45,9 @@ export const createInventoryItem = async (req, res) => {
   try {
     const { name, icon, category, currentQty, unit, minQty } = req.body;
     if (!name || unit === undefined || minQty === undefined) {
-      return res.status(400).json({ message: "Name, unit and minQty are required" });
+      return res
+        .status(400)
+        .json({ message: "Name, unit and minQty are required" });
     }
     const item = await InventoryItem.create({
       name,
@@ -127,7 +132,9 @@ export const createSupplierOrder = async (req, res) => {
   try {
     const { date, supplier, items, total, status, deliveryDate } = req.body;
     if (!supplier || !items || !total) {
-      return res.status(400).json({ message: "Supplier, items and total are required" });
+      return res
+        .status(400)
+        .json({ message: "Supplier, items and total are required" });
     }
     const order = await SupplierOrder.create({
       date: date || new Date().toISOString().slice(0, 10),

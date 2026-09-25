@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import dotenv from 'dotenv';    
+import dotenv from "dotenv";
 dotenv.config();
 const MONGO_URL = process.env.MONGO_URL;
 
@@ -9,10 +9,9 @@ if (!MONGO_URL) {
   process.exit(1);
 }
 
-
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URL); // options not needed
+    const conn = await mongoose.connect(process.env.MONGO_URL);
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {

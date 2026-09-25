@@ -4,10 +4,9 @@ import {
   getOrders,
   getOrder,
   updateOrderStatus,
-  getOrderById,
   getMyOrders,
   advanceOrderStatus,
-  cancelOrder
+  cancelOrder,
 } from "../controllers/orderController.js";
 import { admin, protect } from "../middleware/authMiddleware.js";
 

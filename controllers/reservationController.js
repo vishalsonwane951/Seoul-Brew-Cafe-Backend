@@ -3,7 +3,16 @@ import Reservation from "../models/Reservation.js";
 // Create Reservation
 export const createReservation = async (req, res) => {
   try {
-    const { customerName, email, phone, table, date, time, guests, specialRequest } = req.body;
+    const {
+      customerName,
+      email,
+      phone,
+      table,
+      date,
+      time,
+      guests,
+      specialRequest,
+    } = req.body;
 
     const reservation = new Reservation({
       customerName,
@@ -37,29 +46,10 @@ export const createReservation = async (req, res) => {
         status: savedReservation.status,
       },
     });
-
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
-
-// Get All Reservations (with optional date filter)
-// export const getReservations = async (req, res) => {
-//   try {
-//     const { date } = req.query;
-
-//     const filter = date ? { date: { $regex: `^${date}` } } : {};
-
-//     const reservations = await Reservation.find(filter)
-//       .select('customerName email phone date time guests table status specialRequest')
-//       .sort({ createdAt: -1 })
-//       .lean();
-
-//     res.json(reservations);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 
 // Update Reservation Status
 export const updateReservationStatus = async (req, res) => {
@@ -87,12 +77,21 @@ export const updateReservationStatus = async (req, res) => {
 // Update Reservation Details
 export const updateReservation = async (req, res) => {
   try {
-    const { customerName, email, phone, date, time, guests, table, specialRequest } = req.body;
+    const {
+      customerName,
+      email,
+      phone,
+      date,
+      time,
+      guests,
+      table,
+      specialRequest,
+    } = req.body;
 
     const reservation = await Reservation.findByIdAndUpdate(
       req.params.id,
       { customerName, email, phone, date, time, guests, table, specialRequest },
-      { new: true }
+      { new: true },
     ).lean();
 
     if (!reservation) {
@@ -132,16 +131,13 @@ export const getMyReservations = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json(
-      reservations.map((r) => ({ ...r, _id: r._id.toString() }))
-    );
+    res.json(reservations.map((r) => ({ ...r, _id: r._id.toString() })));
   } catch (error) {
     console.error("Get my reservations error:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// ✅ NEW: Let a customer cancel their own still-pending reservation
 export const cancelMyReservation = async (req, res) => {
   try {
     const reservation = await Reservation.findOne({

@@ -13,7 +13,7 @@ const supplierOrderSchema = new mongoose.Schema(
     },
     deliveryDate: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("SupplierOrder", supplierOrderSchema);

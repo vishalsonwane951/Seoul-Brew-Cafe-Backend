@@ -28,14 +28,12 @@ const staffSchema = new mongoose.Schema(
     phone: { type: String },
     address: { type: String },
     emergencyContact: { type: String },
-    // Onboarded document (link or description)
     onboardedDoc: { type: String },
     onboardedDocUrl: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-// Keep `initial` in sync with `name`
 staffSchema.pre("save", function () {
   if ((this.isModified("name") || !this.initial) && this.name) {
     this.initial = this.name.trim().charAt(0).toUpperCase();
@@ -43,4 +41,3 @@ staffSchema.pre("save", function () {
 });
 
 export default mongoose.model("Staff", staffSchema);
-

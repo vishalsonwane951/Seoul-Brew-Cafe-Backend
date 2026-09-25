@@ -1,4 +1,3 @@
-// server.js or routes/info.js
 import express from "express";
 const router = express.Router();
 
@@ -10,11 +9,10 @@ router.get("/cafe-info", (req, res) => {
       // ...
     ],
     address: {
-      // line1: "123 Main St",
       line2: "Sihgad Law  College, Pune",
       phone: "+91 7888251550",
-      email: "goodluck@cafe.com"
-    }
+      email: "goodluck@cafe.com",
+    },
   });
 });
 

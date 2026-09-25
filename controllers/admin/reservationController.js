@@ -5,7 +5,16 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 // Create Reservation
 export const createReservation = async (req, res) => {
   try {
-    const { customerName, email, phone, table, date, time, guests, specialRequest } = req.body;
+    const {
+      customerName,
+      email,
+      phone,
+      table,
+      date,
+      time,
+      guests,
+      specialRequest,
+    } = req.body;
 
     const reservation = new Reservation({
       user: req.user?._id || null,
@@ -22,7 +31,6 @@ export const createReservation = async (req, res) => {
 
     const savedReservation = await reservation.save();
 
-    // Emit real-time event
     req.io.emit("reservations:updated");
 
     res.status(201).json({
@@ -40,12 +48,10 @@ export const createReservation = async (req, res) => {
         status: savedReservation.status,
       },
     });
-
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
-
 
 export const getAllReservations = async (req, res) => {
   try {
@@ -57,34 +63,28 @@ export const getAllReservations = async (req, res) => {
   }
 };
 
-
 // Get All Reservations (with optional date filter)
 export const getReservationsByDate = async (req, res) => {
   try {
     const { date } = req.params;
- 
+
     if (!DATE_RE.test(date)) {
       return res
         .status(400)
         .json({ message: "Invalid date. Use the format YYYY-MM-DD." });
     }
- 
-    // Anchored prefix match: works whether the stored value is
-    // "2026-09-20" or an ISO string like "2026-09-20T00:00:00.000Z".
-    // `date` is validated above, so it is safe to put in a regex.
     const reservations = await Reservation.find({
       date: { $regex: `^${date}` },
     })
       .sort({ _id: -1 })
       .lean();
- 
+
     return res.status(200).json(reservations);
   } catch (err) {
     console.error("getReservationsByDate:", err);
     return res.status(500).json({ message: "Failed to fetch reservations" });
   }
 };
- 
 
 // Update Reservation Status
 export const updateReservationStatus = async (req, res) => {
@@ -100,7 +100,6 @@ export const updateReservationStatus = async (req, res) => {
 
     const updatedReservation = await reservation.save();
 
-    // Emit real-time event
     req.io.emit("reservations:updated");
 
     res.json(updatedReservation);
@@ -112,19 +111,26 @@ export const updateReservationStatus = async (req, res) => {
 // Update Reservation Details
 export const updateReservation = async (req, res) => {
   try {
-    const { customerName, email, phone, date, time, guests, table, specialRequest } = req.body;
+    const {
+      customerName,
+      email,
+      phone,
+      date,
+      time,
+      guests,
+      table,
+      specialRequest,
+    } = req.body;
 
     const reservation = await Reservation.findByIdAndUpdate(
       req.params.id,
       { customerName, email, phone, date, time, guests, table, specialRequest },
-      { new: true }
+      { new: true },
     ).lean();
 
     if (!reservation) {
       return res.status(404).json({ message: "Reservation not found" });
     }
-
-    // Emit real-time event
     req.io.emit("reservations:updated");
 
     res.json(reservation);
@@ -142,7 +148,6 @@ export const deleteReservation = async (req, res) => {
       return res.status(404).json({ message: "Reservation not found" });
     }
 
-    // Emit real-time event
     req.io.emit("reservations:updated");
 
     res.json({ success: true, message: "Reservation deleted" });
@@ -150,5 +155,3 @@ export const deleteReservation = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// ✅ NEW: Get the logged-in user's own reservations (mobile app Reservation tab)

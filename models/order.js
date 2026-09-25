@@ -1,9 +1,31 @@
 import mongoose from "mongoose";
 
 const STATUS_FLOW = {
-  "Dine-In": ["Pending", "Accepted", "Preparing", "Ready", "Served", "Payment Done"],
-  "Takeaway": ["Pending", "Accepted", "Preparing", "Ready", "Picked Up", "Payment Done"],
-  "Delivery": ["Pending", "Accepted", "Preparing", "Ready", "Out for Delivery", "Delivered", "Payment Done"],
+  "Dine-In": [
+    "Pending",
+    "Accepted",
+    "Preparing",
+    "Ready",
+    "Served",
+    "Payment Done",
+  ],
+  Takeaway: [
+    "Pending",
+    "Accepted",
+    "Preparing",
+    "Ready",
+    "Picked Up",
+    "Payment Done",
+  ],
+  Delivery: [
+    "Pending",
+    "Accepted",
+    "Preparing",
+    "Ready",
+    "Out for Delivery",
+    "Delivered",
+    "Payment Done",
+  ],
 };
 
 const orderSchema = new mongoose.Schema(
@@ -107,14 +129,10 @@ const orderSchema = new mongoose.Schema(
       default: () => new Date(),
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-/**
- * Advance status safely.
- * If targetStatus is provided, it must match the expected next step.
- * Returns { status: <newStatus> } on success, or { error: <reason> } on failure.
- */
+
 orderSchema.methods.advanceStatus = function (targetStatus) {
   if (this.status === "Cancelled") {
     return { error: "Order is cancelled and cannot be advanced" };
